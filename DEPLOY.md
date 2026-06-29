@@ -47,7 +47,7 @@ git push -u origin main
 | `ASPNETCORE_ENVIRONMENT` | `Production` |
 | `Admin__Password` | Mật khẩu quản trị (tự đặt, mạnh) |
 | `Admin__TokenSecret` | Chuỗi bí mật dài ngẫu nhiên |
-| `FRONTEND_URL` | *(điền sau bước 2)* URL Vercel, vd: `https://saodem.vercel.app` |
+| `FRONTEND_URL` | `https://holtel-center.vercel.app` |
 
 5. **Create Web Service** → đợi build (~5–10 phút lần đầu)
 
@@ -82,7 +82,7 @@ Repo có file `render.yaml`. Trên Render: **New** → **Blueprint** → chọn 
 
 | Key | Giá trị |
 |-----|---------|
-| `VITE_API_URL` | `https://saodem-api.onrender.com/api` *(URL Render + `/api`)* |
+| `VITE_API_URL` | `https://holtelcenter.onrender.com/api` |
 
 4. **Deploy**
 

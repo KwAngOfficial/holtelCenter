@@ -34,10 +34,19 @@ if (!string.IsNullOrWhiteSpace(frontendUrl))
 
 builder.Services.AddCors(options =>
 {
+    var allowedOrigins = corsOrigins.Distinct(StringComparer.OrdinalIgnoreCase).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
     options.AddPolicy("Frontend", policy =>
-        policy.WithOrigins(corsOrigins.Distinct(StringComparer.OrdinalIgnoreCase).ToArray())
-              .AllowAnyHeader()
-              .AllowAnyMethod());
+        policy.SetIsOriginAllowed(origin =>
+        {
+            if (string.IsNullOrWhiteSpace(origin)) return false;
+            if (allowedOrigins.Contains(origin)) return true;
+
+            if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri)) return false;
+            return uri.Host.EndsWith(".vercel.app", StringComparison.OrdinalIgnoreCase);
+        })
+        .AllowAnyHeader()
+        .AllowAnyMethod());
 });
 
 var port = Environment.GetEnvironmentVariable("PORT");

@@ -1,6 +1,17 @@
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:5161/api';
 const AUTH_TOKEN_KEY = 'admin_token';
 
+export function getApiBase() {
+  return API_BASE;
+}
+
+function networkErrorMessage(): string {
+  if (API_BASE.includes('localhost') || API_BASE.includes('127.0.0.1')) {
+    return 'Chưa cấu hình VITE_API_URL trên Vercel. Đặt https://holtelcenter.onrender.com/api rồi Redeploy.';
+  }
+  return 'Không kết nối được API. Render free có thể đang khởi động — đợi ~1 phút rồi thử lại.';
+}
+
 export function getAuthToken() {
   return localStorage.getItem(AUTH_TOKEN_KEY) ?? sessionStorage.getItem(AUTH_TOKEN_KEY);
 }
@@ -17,14 +28,19 @@ export function clearAuthToken() {
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const token = getAuthToken();
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options?.headers,
-    },
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...options?.headers,
+      },
+    });
+  } catch {
+    throw new Error(networkErrorMessage());
+  }
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ message: res.statusText }));
