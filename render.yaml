@@ -7,8 +7,8 @@ services:
     name: saodem-api
     runtime: docker
     plan: free
-    dockerfilePath: ./backend/HoltelCentrel.Api/Dockerfile
-    dockerContext: ./backend/HoltelCentrel.Api
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     healthCheckPath: /api/rooms/availability
     envVars:
       - key: ASPNETCORE_ENVIRONMENT

@@ -36,8 +36,8 @@ git push -u origin main
 | **Branch** | `main` |
 | **Root Directory** | *(để trống)* |
 | **Runtime** | **Docker** |
-| **Dockerfile Path** | `backend/HoltelCentrel.Api/Dockerfile` |
-| **Docker Context** | `backend/HoltelCentrel.Api` |
+| **Dockerfile Path** | `Dockerfile` *(ở thư mục gốc repo)* |
+| **Docker Context** | `.` *(thư mục gốc repo — để trống cũng được)* |
 | **Instance Type** | **Free** |
 
 4. **Environment Variables** (bắt buộc):
@@ -151,10 +151,22 @@ VITE_API_URL=https://your-api.onrender.com/api
 
 ---
 
+### Lỗi Docker `HoltelCentrel.Api.csproj: not found`
+
+Render mặc định dùng **context = thư mục gốc repo**. Cấu hình:
+
+- **Dockerfile Path**: `Dockerfile` (file ở gốc repo)
+- **Docker Context**: `.`
+
+Sau đó push code mới và **Manual Deploy** lại.
+
+---
+
 ## Troubleshooting
 
 | Triệu chứng | Cách xử lý |
 |-------------|------------|
+| Docker `csproj: not found` | Dockerfile Path = `Dockerfile`, Docker Context = `.` (gốc repo) |
 | Trang trắng / 404 khi refresh | Đã có `vercel.json` rewrite SPA; redeploy Vercel |
 | `Failed to fetch` / CORS | Kiểm tra `FRONTEND_URL` và `VITE_API_URL` |
 | API chậm lần đầu | Render free cold start — bình thường |
