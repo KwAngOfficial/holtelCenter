@@ -36,8 +36,8 @@ git push -u origin main
 | **Branch** | `main` |
 | **Root Directory** | *(để trống)* |
 | **Runtime** | **Docker** |
-| **Dockerfile Path** | `Dockerfile` *(ở thư mục gốc repo)* |
-| **Docker Context** | `.` *(thư mục gốc repo — để trống cũng được)* |
+| **Dockerfile Path** | `Dockerfile` hoặc `backend/HoltelCentrel.Api/Dockerfile` |
+| **Docker Context** | `.` *(bắt buộc — thư mục gốc repo, KHÔNG dùng `backend/HoltelCentrel.Api`)* |
 | **Instance Type** | **Free** |
 
 4. **Environment Variables** (bắt buộc):
