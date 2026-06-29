@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+frontend/dist/
+backend/**/bin/
+backend/**/obj/
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+
+# Environment
+.env
+.env.local
+.env.*.local
+frontend/.env
+
+# IDE
+.vs/
+.vscode/
+*.user
+
+# OS
+.DS_Store
+Thumbs.db

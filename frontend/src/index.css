@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@source "../index.html";
+@source "../src/**/*.{js,ts,jsx,tsx}";
+
+@theme {
+  --font-display: "Cormorant Garamond", Georgia, serif;
+  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
+  --color-cream: #FDFBF7;
+  --color-cream-dark: #F5F0E8;
+  --color-espresso: #2C2420;
+  --color-espresso-muted: #5C4F47;
+  --color-terracotta: #C4714A;
+  --color-terracotta-dark: #A85A38;
+  --color-sage: #7A8B6F;
+  --color-sage-light: #E8EDE4;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    color: var(--color-espresso);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3 {
+    font-family: var(--font-display);
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+}
