@@ -33,6 +33,12 @@ public static class RoomBillingService
         return TimeZoneInfo.ConvertTimeFromUtc(utc, VietnamTimeZone);
     }
 
+    public static DateTime FromVietnamLocal(DateTime local)
+    {
+        var unspecified = DateTime.SpecifyKind(local, DateTimeKind.Unspecified);
+        return TimeZoneInfo.ConvertTimeToUtc(unspecified, VietnamTimeZone);
+    }
+
     public static DateTime VietnamNowUtc()
     {
         return TimeZoneInfo.ConvertTimeToUtc(

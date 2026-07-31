@@ -110,4 +110,37 @@ public class RoomSessionService(AppDbContext db)
             billing.BreakdownLines.ToArray()
         );
     }
+
+    public async Task<ActiveSessionDto> UpdateCheckInAsync(Room room, DateTime checkInLocal)
+    {
+        if (room.Status != RoomStatus.Occupied)
+            throw new InvalidOperationException("Chỉ chỉnh giờ khi phòng đang thuê.");
+
+        var booking = await GetActiveBookingAsync(room.Id)
+            ?? throw new InvalidOperationException("Phòng không có phiên thuê active.");
+
+        var checkInUtc = RoomBillingService.FromVietnamLocal(checkInLocal);
+        if (checkInUtc > DateTime.UtcNow.AddMinutes(5))
+            throw new InvalidOperationException("Giờ vào không được sau thời điểm hiện tại.");
+
+        booking.CheckIn = checkInUtc;
+        await db.SaveChangesAsync();
+
+        decimal? estimated = null;
+        try
+        {
+            estimated = RoomBillingService.Calculate(booking.CheckIn, DateTime.UtcNow).TotalAmount;
+        }
+        catch
+        {
+            // ignore if checkout would be invalid
+        }
+
+        return new ActiveSessionDto(
+            booking.Id,
+            booking.CheckIn,
+            RoomBillingService.ToVietnamLocal(booking.CheckIn),
+            estimated
+        );
+    }
 }

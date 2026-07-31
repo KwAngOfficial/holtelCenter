@@ -1,15 +1,48 @@
-const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:5161/api';
+import { API_PORT, isLocalApiUrl, isLocalHost, PRODUCTION_API_URL } from '../constants/site';
+
+declare global {
+  interface Window {
+    __API_BASE__?: string;
+  }
+}
+
+export function resolveApiBase(): string {
+  if (typeof window !== 'undefined' && window.__API_BASE__) {
+    return window.__API_BASE__;
+  }
+
+  const fromEnv = import.meta.env.VITE_API_URL as string | undefined;
+
+  if (typeof window !== 'undefined') {
+    const { protocol, hostname } = window.location;
+
+    if (!isLocalHost(hostname)) {
+      // Build-time: /api hoặc URL đầy đủ (Nginx / subdomain)
+      if (fromEnv && !isLocalApiUrl(fromEnv)) return fromEnv;
+
+      if (hostname.endsWith('.vercel.app')) return PRODUCTION_API_URL;
+
+      // VPS chưa có domain/Nginx: IP:5161
+      return `${protocol}//${hostname}:${API_PORT}/api`;
+    }
+  }
+
+  if (fromEnv) return fromEnv;
+  return `http://localhost:${API_PORT}/api`;
+}
+
 const AUTH_TOKEN_KEY = 'admin_token';
 
 export function getApiBase() {
-  return API_BASE;
+  return resolveApiBase();
 }
 
 function networkErrorMessage(): string {
-  if (API_BASE.includes('localhost') || API_BASE.includes('127.0.0.1')) {
-    return 'Chưa cấu hình VITE_API_URL trên Vercel. Đặt https://holtelcenter.onrender.com/api rồi Redeploy.';
+  const base = getApiBase();
+  if (isLocalApiUrl(base)) {
+    return 'Không kết nối được API local. Chạy: cd backend/HoltelCentrel.Api && dotnet run';
   }
-  return 'Không kết nối được API. Render free có thể đang khởi động — đợi ~1 phút rồi thử lại.';
+  return `Không kết nối được API (${base}). Kiểm tra backend đang chạy và CORS.`;
 }
 
 export function getAuthToken() {
@@ -28,9 +61,10 @@ export function clearAuthToken() {
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const token = getAuthToken();
+  const apiBase = getApiBase();
   let res: Response;
   try {
-    res = await fetch(`${API_BASE}${path}`, {
+    res = await fetch(`${apiBase}${path}`, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
@@ -81,6 +115,11 @@ export const api = {
       }),
     billingPreview: (id: number) =>
       request<import('../types').CheckoutBilling>(`/rooms/${id}/billing-preview`),
+    updateCheckIn: (id: number, checkInLocal: string) =>
+      request<import('../types').Room>(`/rooms/${id}/check-in`, {
+        method: 'PATCH',
+        body: JSON.stringify({ checkInLocal }),
+      }),
     delete: (id: number) => request<void>(`/rooms/${id}`, { method: 'DELETE' }),
   },
   hourlyRates: {

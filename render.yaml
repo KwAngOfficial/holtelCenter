@@ -22,7 +22,7 @@ services:
       - key: FRONTEND_URL
         sync: false
       - key: ConnectionStrings__DefaultConnection
-        value: Data Source=holtelcentrel.db
+        sync: false
 
   # Frontend React (Static Site) — bỏ qua nếu dùng Vercel
   - type: web

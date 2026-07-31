@@ -14,8 +14,8 @@ export const roomStatusLabel: Record<string, string> = {
 };
 
 export const roomStatusColor: Record<string, string> = {
-  Available: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-  Occupied: 'bg-rose-100 text-rose-800 border-rose-200',
+  Available: 'bg-emerald-500 text-white border-emerald-700',
+  Occupied: 'bg-red-700 text-white border-red-950',
   Cleaning: 'bg-amber-100 text-amber-800 border-amber-200',
   Maintenance: 'bg-slate-100 text-slate-700 border-slate-200',
 };

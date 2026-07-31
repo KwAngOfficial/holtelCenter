@@ -183,6 +183,8 @@ public record CheckInDto(
 
 public record CheckOutDto(int BookingId);
 
+public record UpdateCheckInDto(DateTime CheckInLocal);
+
 public record LoginDto(string Password);
 
 public record LoginResponseDto(string Token, int ExpiresInDays);

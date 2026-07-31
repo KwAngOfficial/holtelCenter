@@ -1,5 +1,6 @@
 import { type FormEvent, useState } from 'react';
 import { Link, Navigate, useLocation } from 'react-router-dom';
+import { getApiBase } from '../../api/client';
 import { useAdminAuth } from '../../contexts/AdminAuthContext';
 
 export default function AdminLoginPage() {
@@ -70,6 +71,10 @@ export default function AdminLoginPage() {
 
           <p className="text-center text-xs text-slate-400">
             Phiên đăng nhập được lưu trên thiết bị này — không cần nhập lại mỗi lần mở trình duyệt.
+          </p>
+
+          <p className="break-all text-center text-[10px] text-slate-300">
+            API: {getApiBase()} · build 2026-07-21
           </p>
 
           <Link

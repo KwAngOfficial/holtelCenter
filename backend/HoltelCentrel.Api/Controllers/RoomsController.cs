@@ -59,6 +59,27 @@ public class RoomsController(AppDbContext db, RoomSessionService sessionService)
         }
     }
 
+    [HttpPatch("{id:int}/check-in")]
+    public async Task<ActionResult<RoomDto>> UpdateCheckIn(int id, UpdateCheckInDto dto)
+    {
+        var room = await db.Rooms.FindAsync(id);
+        if (room is null) return NotFound();
+
+        try
+        {
+            await sessionService.UpdateCheckInAsync(room, dto.CheckInLocal);
+            return Ok(await MapRoomAsync(room));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     [HttpPost]
     public async Task<ActionResult<RoomDto>> Create(CreateRoomDto dto)
     {
