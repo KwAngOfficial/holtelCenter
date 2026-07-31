@@ -112,11 +112,28 @@ app.Lifetime.ApplicationStarted.Register(() =>
     var urls = app.Urls.Any()
         ? string.Join(", ", app.Urls)
         : aspnetUrls ?? "http://0.0.0.0:5161";
+    var cs = app.Configuration.GetConnectionString("DefaultConnection") ?? "";
+    string? dbHost = null;
+    foreach (var part in cs.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+    {
+        var idx = part.IndexOf('=');
+        if (idx <= 0) continue;
+        var key = part[..idx].Trim();
+        if (key.Equals("Host", StringComparison.OrdinalIgnoreCase) || key.Equals("Server", StringComparison.OrdinalIgnoreCase))
+        {
+            dbHost = part[(idx + 1)..].Trim();
+            break;
+        }
+    }
+    if (string.IsNullOrWhiteSpace(dbHost) && cs.Contains("Data Source=", StringComparison.OrdinalIgnoreCase))
+        dbHost = "(sqlite file)";
+
     Console.WriteLine();
     Console.WriteLine("========================================");
     Console.WriteLine("  Sao Dem Holtel API — dang chay");
     Console.WriteLine($"  Environment: {app.Environment.EnvironmentName}");
     Console.WriteLine($"  URLs: {urls}");
+    Console.WriteLine($"  Database: {dbHost ?? "(chua cau hinh)"}");
     Console.WriteLine("  Nhan Ctrl+C de dung");
     Console.WriteLine("========================================");
     Console.WriteLine();

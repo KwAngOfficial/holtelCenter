@@ -43,6 +43,9 @@ public class AdminAuthMiddleware(RequestDelegate next, AdminAuthService auth)
         if (path.Equals("/api/rooms/availability", StringComparison.OrdinalIgnoreCase))
             return true;
 
+        if (path.Equals("/api/health", StringComparison.OrdinalIgnoreCase))
+            return true;
+
         if (path.Equals("/api/rooms", StringComparison.OrdinalIgnoreCase)
             && context.Request.Query.ContainsKey("publicOnly"))
             return true;

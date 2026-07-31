@@ -9,7 +9,7 @@ services:
     plan: free
     dockerfilePath: ./Dockerfile
     dockerContext: .
-    healthCheckPath: /api/rooms/availability
+    healthCheckPath: /api/health
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
@@ -21,6 +21,7 @@ services:
         value: "30"
       - key: FRONTEND_URL
         sync: false
+      # BẮT BUỘC: chuỗi pooler Supabase (IPv4). Không để SQLite.
       - key: ConnectionStrings__DefaultConnection
         sync: false
 
