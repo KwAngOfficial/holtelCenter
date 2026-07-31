@@ -1,9 +1,13 @@
-// Cấu hình API — sửa trên VPS sau khi deploy, KHÔNG cần npm run build lại
+// Cấu hình API runtime — sửa trên VPS sau khi deploy, KHÔNG cần npm run build lại
 (function () {
   var host = window.location.hostname;
   if (host === 'localhost' || host === '127.0.0.1') return;
 
-  // Khuyến nghị: Nginx proxy https://domain.com/api → backend
+  // Vercel: frontend tách backend — không dùng /api cùng domain
+  // (để client.ts dùng VITE_API_URL hoặc PRODUCTION_API_URL → Render)
+  if (host.indexOf('.vercel.app') !== -1) return;
+
+  // VPS + domain + Nginx: https://domain.com/api → backend
   window.__API_BASE__ = '/api';
 
   // Nếu chưa có Nginx, dùng IP + port (bỏ comment 2 dòng dưới, comment dòng trên):
