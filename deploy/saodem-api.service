@@ -1,0 +1,19 @@
+[Unit]
+Description=Sao Dem Holtel API
+After=network.target
+
+[Service]
+WorkingDirectory=/var/www/saodem/api
+ExecStart=/usr/bin/dotnet /var/www/saodem/api/HoltelCentrel.Api.dll
+Restart=always
+RestartSec=5
+Environment=ASPNETCORE_ENVIRONMENT=Production
+Environment=ASPNETCORE_URLS=http://127.0.0.1:5161
+Environment=FRONTEND_URL=https://YOUR_DOMAIN,https://www.YOUR_DOMAIN
+Environment=Admin__Password=CHANGE_ME
+Environment=Admin__TokenSecret=CHANGE_ME_LONG_SECRET
+Environment=Admin__SessionDays=30
+Environment=ConnectionStrings__DefaultConnection=Host=aws-0-ap-northeast-1.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.aepgggsewieagxlwocxo;Password=YOUR_PASSWORD;SSL Mode=Require;Trust Server Certificate=true
+
+[Install]
+WantedBy=multi-user.target
