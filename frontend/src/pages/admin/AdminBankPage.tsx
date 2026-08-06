@@ -84,8 +84,8 @@ export default function AdminBankPage() {
     return <div className="text-slate-500">Đang tải...</div>;
   }
 
-  const webhookUrl = settings.webhookUrlHint || `${getApiBase().replace(/\/api\/?$/, '')}/api/webhooks/bank`;
-  const sepayUrl = webhookUrl.replace(/\/bank$/, '/sepay');
+  const webhookUrl = `${getApiBase().replace(/\/$/, '')}/webhooks/bank`;
+  const sepayUrl = `${getApiBase().replace(/\/$/, '')}/webhooks/sepay`;
 
   return (
     <div className="min-w-0 max-w-4xl">
@@ -230,7 +230,9 @@ export default function AdminBankPage() {
       <section className="mt-6 space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
         <h2 className="text-base font-semibold text-espresso">URL webhook (dán vào SePay)</h2>
         <p className="text-xs text-slate-500">
-          Ở SePay → Webhooks: dán URL, chọn xác thực <strong>API Key / Authorization Apikey</strong> với secret bên trên.
+          Dán URL backend API (thường domain Render, <strong>không</strong> dùng domain Vercel).
+          Method: <strong>POST</strong>. Auth: <strong>API Key</strong> = Webhook secret
+          (`Authorization: Apikey …`). Nút “Gửi thử” một số app dùng GET — endpoint đã hỗ trợ GET kiểm tra URL.
         </p>
 
         <div className="space-y-2">

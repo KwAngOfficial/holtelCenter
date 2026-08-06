@@ -16,6 +16,31 @@ public class WebhooksController(BankPaymentService bankService) : ControllerBase
         PropertyNameCaseInsensitive = true
     };
 
+    /// <summary>
+    /// SePay / health check thường gửi GET — trả 200 để không còn 405 Method Not Allowed.
+    /// Giao dịch thật chỉ nhận POST.
+    /// </summary>
+    [HttpGet("bank")]
+    [HttpGet("sepay")]
+    [HttpHead("bank")]
+    [HttpHead("sepay")]
+    public IActionResult Probe()
+    {
+        return Ok(new
+        {
+            ok = true,
+            message = "Webhook ngân hàng sẵn sàng. Gửi giao dịch bằng POST + header Authorization: Apikey <secret>.",
+            method = "POST",
+            paths = new[] { "/api/webhooks/bank", "/api/webhooks/sepay" },
+            auth = new[]
+            {
+                "Authorization: Apikey <secret>",
+                "Authorization: Bearer <secret>",
+                "X-Api-Key: <secret>"
+            }
+        });
+    }
+
     [HttpPost("bank")]
     [HttpPost("sepay")]
     public async Task<ActionResult<WebhookResultDto>> ReceiveBankWebhook()
