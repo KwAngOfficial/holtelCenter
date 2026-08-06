@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HoltelCentrel.Api.Services;
 
-public class RoomSessionService(AppDbContext db)
+public class RoomSessionService(AppDbContext db, BankPaymentService bankService)
 {
     public async Task<Booking?> GetActiveBookingAsync(int roomId) =>
         await db.Bookings
@@ -24,6 +24,7 @@ public class RoomSessionService(AppDbContext db)
             RoomId = room.Id,
             CheckIn = DateTime.UtcNow,
             Status = "Active",
+            PaymentStatus = "Unpaid",
             Notes = "Tự động check-in khi chuyển trạng thái Đang thuê"
         };
 
@@ -61,8 +62,16 @@ public class RoomSessionService(AppDbContext db)
         booking.Status = "Completed";
         booking.Notes = string.Join("\n", billing.BreakdownLines);
 
+        var settings = await bankService.GetOrCreateSettingsAsync();
+        var transferContent = BankPaymentService.BuildTransferContent(settings.TransferContentPrefix, booking.Id);
+        booking.TransferContent = transferContent;
+        if (string.IsNullOrWhiteSpace(booking.PaymentStatus))
+            booking.PaymentStatus = "Unpaid";
+
         room.Status = newStatus;
         await db.SaveChangesAsync();
+
+        var bankTransfer = await bankService.TryBuildTransferInfoAsync(booking.Id, billing.TotalAmount);
 
         return new CheckoutBillingDto(
             booking.Id,
@@ -78,20 +87,26 @@ public class RoomSessionService(AppDbContext db)
             billing.OvernightAmount,
             billing.ExcessAmount,
             billing.TotalAmount,
-            billing.BreakdownLines.ToArray()
+            billing.BreakdownLines.ToArray(),
+            booking.PaymentStatus,
+            transferContent,
+            bankTransfer
         );
     }
 
-    public CheckoutBillingDto PreviewBilling(Room room)
+    public async Task<CheckoutBillingDto> PreviewBillingAsync(Room room)
     {
-        var booking = db.Bookings
+        var booking = await db.Bookings
             .Where(b => b.RoomId == room.Id && b.Status == "Active")
             .OrderByDescending(b => b.CheckIn)
-            .FirstOrDefault()
+            .FirstOrDefaultAsync()
             ?? throw new InvalidOperationException("Phòng không có phiên thuê active.");
 
         var checkOut = DateTime.UtcNow;
         var billing = RoomBillingService.Calculate(booking.CheckIn, checkOut);
+        var settings = await bankService.GetOrCreateSettingsAsync();
+        var transferContent = BankPaymentService.BuildTransferContent(settings.TransferContentPrefix, booking.Id);
+        var bankTransfer = await bankService.TryBuildTransferInfoAsync(booking.Id, billing.TotalAmount);
 
         return new CheckoutBillingDto(
             booking.Id,
@@ -107,8 +122,17 @@ public class RoomSessionService(AppDbContext db)
             billing.OvernightAmount,
             billing.ExcessAmount,
             billing.TotalAmount,
-            billing.BreakdownLines.ToArray()
+            billing.BreakdownLines.ToArray(),
+            booking.PaymentStatus,
+            transferContent,
+            bankTransfer
         );
+    }
+
+    // Keep sync name for callers that haven't been updated yet — prefer PreviewBillingAsync
+    public CheckoutBillingDto PreviewBilling(Room room)
+    {
+        return PreviewBillingAsync(room).GetAwaiter().GetResult();
     }
 
     public async Task<ActiveSessionDto> UpdateCheckInAsync(Room room, DateTime checkInLocal)

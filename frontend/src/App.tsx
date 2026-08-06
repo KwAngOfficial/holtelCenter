@@ -3,6 +3,7 @@ import AdminGuard from './components/AdminGuard';
 import { AdminAuthProvider } from './contexts/AdminAuthContext';
 import AdminLayout from './layouts/AdminLayout';
 import PublicLayout from './layouts/PublicLayout';
+import AdminBankPage from './pages/admin/AdminBankPage';
 import AdminCombosPage from './pages/admin/AdminCombosPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminLoginPage from './pages/admin/AdminLoginPage';
@@ -48,6 +49,7 @@ export default function App() {
             <Route path="san-pham" element={<AdminProductsPage />} />
             <Route path="voucher" element={<AdminVouchersPage />} />
             <Route path="combo" element={<AdminCombosPage />} />
+            <Route path="ngan-hang" element={<AdminBankPage />} />
           </Route>
         </Routes>
       </BrowserRouter>

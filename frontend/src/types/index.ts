@@ -36,6 +36,48 @@ export interface CheckoutBilling {
   excessAmount: number;
   totalAmount: number;
   breakdownLines: string[];
+  paymentStatus?: string;
+  transferContent?: string | null;
+  bankTransfer?: BankTransferInfo | null;
+}
+
+export interface BankTransferInfo {
+  bankName: string;
+  bankBin: string;
+  accountNumber: string;
+  accountName: string;
+  transferContent: string;
+  qrImageUrl: string;
+}
+
+export interface BankSettings {
+  id: number;
+  bankName: string;
+  bankBin: string;
+  accountNumber: string;
+  accountName: string;
+  transferContentPrefix: string;
+  webhookSecret: string;
+  isEnabled: boolean;
+  updatedAt: string;
+  webhookUrlHint: string;
+}
+
+export interface BankPayment {
+  id: number;
+  gatewayTransactionId: string;
+  gateway?: string | null;
+  accountNumber?: string | null;
+  content?: string | null;
+  referenceCode?: string | null;
+  transferType?: string | null;
+  amount: number;
+  bookingId?: number | null;
+  roomNumber?: string | null;
+  status: string;
+  matchNote?: string | null;
+  receivedAt: string;
+  transactionAt?: string | null;
 }
 
 export interface UpdateRoomStatusResponse {

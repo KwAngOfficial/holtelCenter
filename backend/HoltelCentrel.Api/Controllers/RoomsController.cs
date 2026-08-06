@@ -51,7 +51,7 @@ public class RoomsController(AppDbContext db, RoomSessionService sessionService)
 
         try
         {
-            return Ok(sessionService.PreviewBilling(room));
+            return Ok(await sessionService.PreviewBillingAsync(room));
         }
         catch (InvalidOperationException ex)
         {

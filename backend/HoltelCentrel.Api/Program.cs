@@ -18,7 +18,9 @@ builder.Services.AddOpenApi();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<RoomSessionService>();
+builder.Services.AddScoped<BankPaymentService>();
 builder.Services.AddSingleton<AdminAuthService>();
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>

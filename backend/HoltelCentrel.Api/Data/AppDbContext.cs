@@ -12,6 +12,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Combo> Combos => Set<Combo>();
     public DbSet<ComboItem> ComboItems => Set<ComboItem>();
     public DbSet<Booking> Bookings => Set<Booking>();
+    public DbSet<BankSettings> BankSettings => Set<BankSettings>();
+    public DbSet<BankPayment> BankPayments => Set<BankPayment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -40,5 +42,19 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .WithMany(r => r.Bookings)
             .HasForeignKey(b => b.RoomId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<BankSettings>()
+            .Property(b => b.Id)
+            .ValueGeneratedNever();
+
+        modelBuilder.Entity<BankPayment>()
+            .HasIndex(p => p.GatewayTransactionId)
+            .IsUnique();
+
+        modelBuilder.Entity<BankPayment>()
+            .HasOne(p => p.Booking)
+            .WithMany()
+            .HasForeignKey(p => p.BookingId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

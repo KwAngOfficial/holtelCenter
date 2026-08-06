@@ -37,6 +37,10 @@ public class AdminAuthMiddleware(RequestDelegate next, AdminAuthService auth)
         if (path.StartsWith("/api/auth", StringComparison.OrdinalIgnoreCase))
             return true;
 
+        // Bank / SePay webhooks — public POST, authenticated by WebhookSecret inside controller
+        if (path.StartsWith("/api/webhooks", StringComparison.OrdinalIgnoreCase))
+            return true;
+
         if (!method.Equals("GET", StringComparison.OrdinalIgnoreCase))
             return false;
 

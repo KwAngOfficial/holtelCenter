@@ -10,6 +10,7 @@ const adminNav = [
   { to: '/admin/san-pham', label: 'Sản phẩm' },
   { to: '/admin/voucher', label: 'Voucher' },
   { to: '/admin/combo', label: 'Combo' },
+  { to: '/admin/ngan-hang', label: 'Ngân hàng' },
 ];
 
 export default function AdminLayout() {

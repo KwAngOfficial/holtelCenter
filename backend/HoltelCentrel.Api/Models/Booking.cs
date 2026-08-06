@@ -18,4 +18,15 @@ public class Booking
     public int? ComboId { get; set; }
     public string Status { get; set; } = "Active";
     public string? Notes { get; set; }
+
+    /// <summary>Unpaid | Paid | Manual — thanh toán sau checkout.</summary>
+    public string PaymentStatus { get; set; } = "Unpaid";
+
+    /// <summary>Cash | BankTransfer | null</summary>
+    public string? PaymentMethod { get; set; }
+
+    public DateTime? PaidAt { get; set; }
+
+    /// <summary>Nội dung CK mong đợi, e.g. SD42.</summary>
+    public string? TransferContent { get; set; }
 }

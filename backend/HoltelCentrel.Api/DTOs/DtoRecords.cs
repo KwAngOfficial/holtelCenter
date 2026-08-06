@@ -51,7 +51,83 @@ public record CheckoutBillingDto(
     decimal OvernightAmount,
     decimal ExcessAmount,
     decimal TotalAmount,
-    string[] BreakdownLines
+    string[] BreakdownLines,
+    string PaymentStatus = "Unpaid",
+    string? TransferContent = null,
+    BankTransferInfoDto? BankTransfer = null
+);
+
+public record BankTransferInfoDto(
+    string BankName,
+    string BankBin,
+    string AccountNumber,
+    string AccountName,
+    string TransferContent,
+    string QrImageUrl
+);
+
+public record BankSettingsDto(
+    int Id,
+    string BankName,
+    string BankBin,
+    string AccountNumber,
+    string AccountName,
+    string TransferContentPrefix,
+    string WebhookSecret,
+    bool IsEnabled,
+    DateTime UpdatedAt,
+    string WebhookUrlHint
+);
+
+public record UpdateBankSettingsDto(
+    string BankName,
+    string BankBin,
+    string AccountNumber,
+    string AccountName,
+    string TransferContentPrefix,
+    string? WebhookSecret,
+    bool IsEnabled,
+    bool RegenerateSecret = false
+);
+
+public record BankPaymentDto(
+    int Id,
+    string GatewayTransactionId,
+    string? Gateway,
+    string? AccountNumber,
+    string? Content,
+    string? ReferenceCode,
+    string? TransferType,
+    decimal Amount,
+    int? BookingId,
+    string? RoomNumber,
+    string Status,
+    string? MatchNote,
+    DateTime ReceivedAt,
+    DateTime? TransactionAt
+);
+
+public record SePayWebhookDto(
+    long? Id,
+    string? Gateway,
+    string? TransactionDate,
+    string? AccountNumber,
+    string? Code,
+    string? Content,
+    string? TransferType,
+    decimal? TransferAmount,
+    decimal? Accumulated,
+    string? SubAccount,
+    string? ReferenceCode,
+    string? Description
+);
+
+public record WebhookResultDto(
+    bool Ok,
+    string Status,
+    string Message,
+    int? PaymentId = null,
+    int? BookingId = null
 );
 
 public record CreateRoomDto(

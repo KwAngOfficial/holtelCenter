@@ -150,4 +150,13 @@ export const api = {
     toggle: (id: number) => request<import('../types').Combo>(`/combos/${id}/toggle`, { method: 'PATCH' }),
     delete: (id: number) => request<void>(`/combos/${id}`, { method: 'DELETE' }),
   },
+  bank: {
+    get: () => request<import('../types').BankSettings>('/bank'),
+    update: (data: object) =>
+      request<import('../types').BankSettings>('/bank', { method: 'PUT', body: JSON.stringify(data) }),
+    payments: (take = 50) =>
+      request<import('../types').BankPayment[]>(`/bank/payments?take=${take}`),
+    markPaid: (bookingId: number) =>
+      request<import('../types').BankPayment>(`/bank/payments/${bookingId}/mark-paid`, { method: 'POST' }),
+  },
 };
