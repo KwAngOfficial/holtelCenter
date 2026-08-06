@@ -53,7 +53,7 @@ function ActionButton({
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className={`flex-1 rounded-lg px-3 py-2.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${styles[variant]}`}
+      className={`min-h-10 min-w-0 flex-1 rounded-lg px-2.5 py-2.5 text-xs font-semibold leading-tight transition disabled:cursor-not-allowed disabled:opacity-50 sm:px-3 ${styles[variant]}`}
     >
       {label}
     </button>
@@ -64,32 +64,32 @@ export default function RoomActionCard({ room, loading, onAction, onPreview, onE
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <article className="group flex h-full flex-col overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-[0_1px_2px_rgba(44,36,32,0.04)] transition hover:border-slate-300 hover:shadow-[0_8px_24px_rgba(44,36,32,0.08)]">
+    <article className="flex min-w-0 flex-col overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-[0_1px_2px_rgba(44,36,32,0.04)] transition hover:border-slate-300 hover:shadow-[0_8px_24px_rgba(44,36,32,0.08)]">
       <div className={`h-1 w-full shrink-0 ${statusStripe[room.status]}`} aria-hidden />
 
-      <div className="flex flex-1 flex-col p-3.5 sm:p-4">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
+      <div className="flex min-w-0 flex-1 flex-col p-3 sm:p-4">
+        <div className="flex min-w-0 items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <div className="flex min-w-0 items-center gap-2">
               <span className={`h-2 w-2 shrink-0 rounded-full ${statusDot[room.status]}`} aria-hidden />
-              <p className="text-2xl font-bold tracking-tight text-espresso tabular-nums leading-none">
+              <p className="truncate text-xl font-bold tracking-tight text-espresso tabular-nums leading-none sm:text-2xl">
                 {room.roomNumber}
               </p>
             </div>
             <p className="mt-1.5 truncate text-sm font-medium text-espresso" title={room.name}>
               {room.name}
             </p>
-            <p className="mt-0.5 text-[11px] text-slate-400">{room.roomType}</p>
+            <p className="mt-0.5 truncate text-[11px] text-slate-400">{room.roomType}</p>
           </div>
           <span
-            className={`shrink-0 rounded-md px-2 py-1 text-[10px] font-bold tracking-wide uppercase ring-1 ring-inset ${statusBadge[room.status]}`}
+            className={`max-w-[45%] shrink-0 truncate rounded-md px-2 py-1 text-[10px] font-bold tracking-wide uppercase ring-1 ring-inset ${statusBadge[room.status]}`}
           >
             {roomStatusLabel[room.status]}
           </span>
         </div>
 
         {room.status === 'Occupied' && (
-          <div className="mt-3 rounded-lg border border-red-100 bg-red-50/60 p-3">
+          <div className="mt-3 min-w-0 rounded-lg border border-red-100 bg-red-50/60 p-2.5 sm:p-3">
             {room.activeSession ? (
               <>
                 <div className="flex items-center justify-between gap-2">
@@ -102,7 +102,7 @@ export default function RoomActionCard({ room, loading, onAction, onPreview, onE
                       title="Chỉnh giờ vào"
                       disabled={loading}
                       onClick={() => onEditCheckIn(room)}
-                      className="rounded-md p-1 text-red-700/70 transition hover:bg-red-100 hover:text-red-900 disabled:opacity-50"
+                      className="shrink-0 rounded-md p-1.5 text-red-700/70 transition hover:bg-red-100 hover:text-red-900 disabled:opacity-50"
                       aria-label="Chỉnh giờ thuê"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
@@ -115,13 +115,13 @@ export default function RoomActionCard({ room, loading, onAction, onPreview, onE
                     </button>
                   )}
                 </div>
-                <p className="mt-1 text-sm font-medium text-espresso">
+                <p className="mt-1 break-words text-sm font-medium text-espresso">
                   Vào: {formatDateTime(room.activeSession.checkInLocal)}
                 </p>
                 {room.activeSession.estimatedTotal != null && (
                   <p className="mt-1 text-sm text-slate-600">
                     Ước tính:{' '}
-                    <strong className="font-semibold text-espresso">
+                    <strong className="font-semibold text-espresso tabular-nums">
                       {formatCurrency(room.activeSession.estimatedTotal)}
                     </strong>
                   </p>
@@ -137,15 +137,15 @@ export default function RoomActionCard({ room, loading, onAction, onPreview, onE
                 )}
               </>
             ) : (
-              <p className="text-xs text-amber-800">
+              <p className="text-xs leading-relaxed text-amber-800">
                 Phòng đang thuê nhưng chưa có phiên — checkout sẽ không tính tiền.
               </p>
             )}
           </div>
         )}
 
-        <div className="mt-auto flex flex-col pt-3">
-          <div className="flex gap-2">
+        <div className="mt-auto flex min-w-0 flex-col pt-3">
+          <div className="flex min-w-0 flex-col gap-2 sm:flex-row">
             {room.status === 'Available' && (
               <>
                 <ActionButton
@@ -210,7 +210,7 @@ export default function RoomActionCard({ room, loading, onAction, onPreview, onE
           <button
             type="button"
             onClick={() => setExpanded(!expanded)}
-            className="mt-2 w-full rounded-md py-1 text-center text-[11px] font-medium text-slate-400 transition hover:bg-slate-50 hover:text-slate-600"
+            className="mt-2 w-full rounded-md py-1.5 text-center text-[11px] font-medium text-slate-400 transition hover:bg-slate-50 hover:text-slate-600"
           >
             {expanded ? 'Ẩn tùy chọn' : 'Tùy chọn khác'}
           </button>
@@ -225,7 +225,7 @@ export default function RoomActionCard({ room, loading, onAction, onPreview, onE
                     type="button"
                     disabled={loading}
                     onClick={() => onAction(room, s, roomStatusLabel[s])}
-                    className="rounded-md border border-slate-200 bg-slate-50/80 px-2 py-1.5 text-[11px] font-medium text-slate-600 hover:bg-white disabled:opacity-50"
+                    className="min-h-9 rounded-md border border-slate-200 bg-slate-50/80 px-2 py-1.5 text-[11px] font-medium text-slate-600 hover:bg-white disabled:opacity-50"
                   >
                     → {roomStatusLabel[s]}
                   </button>

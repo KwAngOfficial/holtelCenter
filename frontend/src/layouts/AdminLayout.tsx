@@ -59,10 +59,10 @@ export default function AdminLayout() {
         </div>
       </aside>
 
-      <div className="flex flex-1 flex-col">
-        <header className="border-b border-slate-200 bg-white px-4 py-4 lg:hidden">
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="border-b border-slate-200 bg-white px-4 py-3 md:py-4 lg:hidden">
           <p className="font-display text-lg font-semibold">Quản trị</p>
-          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+          <div className="mt-3 flex gap-2 overflow-x-auto overscroll-x-contain pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {adminNav.map((item) => (
               <NavLink
                 key={item.to}
@@ -79,7 +79,7 @@ export default function AdminLayout() {
             ))}
           </div>
         </header>
-        <main className="flex-1 p-4 md:p-6 lg:p-8">
+        <main className="min-w-0 flex-1 overflow-x-hidden p-3 sm:p-4 md:p-6 lg:p-8">
           <Outlet />
         </main>
       </div>
