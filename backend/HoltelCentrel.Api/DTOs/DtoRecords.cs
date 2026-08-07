@@ -115,12 +115,15 @@ public record SePayWebhookDto(
     string? Code,
     string? Content,
     string? TransferType,
+    string? Description,
     decimal? TransferAmount,
     decimal? Accumulated,
     string? SubAccount,
-    string? ReferenceCode,
-    string? Description
+    string? ReferenceCode
 );
+
+/// <summary>Response chuẩn SePay: HTTP 200 + {"success":true}.</summary>
+public record SePayAckDto(bool Success);
 
 public record WebhookResultDto(
     bool Ok,

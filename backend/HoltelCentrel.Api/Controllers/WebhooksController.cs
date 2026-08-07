@@ -6,20 +6,20 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace HoltelCentrel.Api.Controllers;
 
-/// <summary>Webhook public — xác thực bằng WebhookSecret trong BankSettings (không dùng admin Bearer).</summary>
+/// <summary>
+/// SePay Webhook: POST payload giao dịch → HTTP 200 + {"success":true} trong 30s.
+/// Auth tuỳ chọn: Authorization Apikey / Bearer / X-Api-Key = BankSettings.WebhookSecret.
+/// </summary>
 [ApiController]
 [Route("api/webhooks")]
-public class WebhooksController(BankPaymentService bankService) : ControllerBase
+public class WebhooksController(BankPaymentService bankService, ILogger<WebhooksController> logger) : ControllerBase
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
     };
 
-    /// <summary>
-    /// SePay / health check thường gửi GET — trả 200 để không còn 405 Method Not Allowed.
-    /// Giao dịch thật chỉ nhận POST.
-    /// </summary>
+    /// <summary>Probe URL (browser / health). SePay dùng POST.</summary>
     [HttpGet("bank")]
     [HttpGet("sepay")]
     [HttpHead("bank")]
@@ -29,9 +29,11 @@ public class WebhooksController(BankPaymentService bankService) : ControllerBase
         return Ok(new
         {
             ok = true,
-            message = "Webhook ngân hàng sẵn sàng. Gửi giao dịch bằng POST + header Authorization: Apikey <secret>.",
+            provider = "SePay",
+            message = "Webhook sẵn sàng. SePay gửi HTTP POST; response chuẩn: {\"success\":true}.",
             method = "POST",
-            paths = new[] { "/api/webhooks/bank", "/api/webhooks/sepay" },
+            paths = new[] { "/api/webhooks/sepay", "/api/webhooks/bank" },
+            successResponse = new { success = true },
             auth = new[]
             {
                 "Authorization: Apikey <secret>",
@@ -41,48 +43,86 @@ public class WebhooksController(BankPaymentService bankService) : ControllerBase
         });
     }
 
+    /// <summary>
+    /// Nhận webhook SePay. Luôn trả {"success":true} khi đã nhận request hợp lệ
+    /// (kể cả Unmatched/Duplicate) để SePay không retry vô tận.
+    /// 500 chỉ khi lỗi hệ thống — SePay sẽ retry.
+    /// </summary>
     [HttpPost("bank")]
     [HttpPost("sepay")]
-    public async Task<ActionResult<WebhookResultDto>> ReceiveBankWebhook()
+    public async Task<IActionResult> ReceiveSePayWebhook()
     {
-        var settings = await bankService.GetOrCreateSettingsAsync();
-
-        if (!bankService.ValidateWebhookSecret(settings, Request))
-            return Unauthorized(new { message = "Webhook secret không hợp lệ." });
-
-        string raw;
-        using (var reader = new StreamReader(Request.Body, Encoding.UTF8))
-            raw = await reader.ReadToEndAsync();
-
-        if (string.IsNullOrWhiteSpace(raw))
-            return BadRequest(new { message = "Body trống." });
-
-        SePayWebhookDto? dto;
         try
         {
-            // SePay gửi 1 object; một số tool gửi mảng
-            using var doc = JsonDocument.Parse(raw);
-            if (doc.RootElement.ValueKind == JsonValueKind.Array)
-            {
-                if (doc.RootElement.GetArrayLength() == 0)
-                    return BadRequest(new { message = "Mảng giao dịch trống." });
+            var settings = await bankService.GetOrCreateSettingsAsync();
 
-                dto = doc.RootElement[0].Deserialize<SePayWebhookDto>(JsonOptions);
-            }
-            else
+            if (!bankService.ValidateWebhookSecret(settings, Request))
             {
-                dto = doc.RootElement.Deserialize<SePayWebhookDto>(JsonOptions);
+                logger.LogWarning("SePay webhook: secret không hợp lệ từ {IP}",
+                    HttpContext.Connection.RemoteIpAddress?.ToString());
+                return Unauthorized(new { success = false, message = "Webhook secret không hợp lệ." });
             }
+
+            string raw;
+            using (var reader = new StreamReader(Request.Body, Encoding.UTF8))
+                raw = await reader.ReadToEndAsync();
+
+            if (string.IsNullOrWhiteSpace(raw))
+            {
+                // Body trống — vẫn success để không spam retry nếu tool test rỗng
+                logger.LogWarning("SePay webhook: body trống");
+                return SePaySuccess();
+            }
+
+            SePayWebhookDto? dto;
+            try
+            {
+                using var doc = JsonDocument.Parse(raw);
+                if (doc.RootElement.ValueKind == JsonValueKind.Array)
+                {
+                    // Một số replay/tool gửi mảng
+                    if (doc.RootElement.GetArrayLength() == 0)
+                        return SePaySuccess();
+
+                    dto = doc.RootElement[0].Deserialize<SePayWebhookDto>(JsonOptions);
+                }
+                else
+                {
+                    dto = doc.RootElement.Deserialize<SePayWebhookDto>(JsonOptions);
+                }
+            }
+            catch (JsonException ex)
+            {
+                logger.LogWarning(ex, "SePay webhook: JSON không hợp lệ");
+                // SePay chính thức luôn gửi JSON hợp lệ; tool test lỗi → success để dừng
+                return SePaySuccess();
+            }
+
+            if (dto is null)
+                return SePaySuccess();
+
+            var result = await bankService.ProcessSePayWebhookAsync(dto, raw);
+            logger.LogInformation(
+                "SePay webhook id={TxId} status={Status} booking={BookingId}: {Message}",
+                dto.Id?.ToString() ?? "(none)",
+                result.Status,
+                result.BookingId,
+                result.Message);
+
+            return SePaySuccess();
         }
-        catch (JsonException)
+        catch (Exception ex)
         {
-            return BadRequest(new { message = "JSON không hợp lệ." });
+            // Lỗi DB/hệ thống → không success → SePay retry
+            logger.LogError(ex, "SePay webhook lỗi hệ thống");
+            return StatusCode(StatusCodes.Status500InternalServerError, new
+            {
+                success = false,
+                message = "Lỗi hệ thống, vui lòng thử lại."
+            });
         }
-
-        if (dto is null)
-            return BadRequest(new { message = "Không đọc được payload webhook." });
-
-        var result = await bankService.ProcessSePayWebhookAsync(dto, raw);
-        return Ok(result);
     }
+
+    private static OkObjectResult SePaySuccess() =>
+        new(new SePayAckDto(true));
 }

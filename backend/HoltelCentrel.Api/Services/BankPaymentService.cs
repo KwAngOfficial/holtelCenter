@@ -138,37 +138,50 @@ public class BankPaymentService(AppDbContext db, IHttpContextAccessor httpContex
     public async Task<WebhookResultDto> ProcessSePayWebhookAsync(SePayWebhookDto dto, string rawJson)
     {
         var settings = await GetOrCreateSettingsAsync();
-        if (!settings.IsEnabled)
-            return new WebhookResultDto(false, "Disabled", "Webhook ngân hàng đang tắt.");
 
+        // SePay: id là khóa chống trùng (không đổi khi retry)
         var txId = dto.Id?.ToString()
-            ?? dto.ReferenceCode
+            ?? (!string.IsNullOrWhiteSpace(dto.ReferenceCode) ? dto.ReferenceCode.Trim() : null)
             ?? $"manual-{Guid.NewGuid():N}";
 
         var existing = await db.BankPayments.FirstOrDefaultAsync(p => p.GatewayTransactionId == txId);
         if (existing is not null)
         {
-            return new WebhookResultDto(true, "Duplicate", "Giao dịch đã xử lý trước đó.", existing.Id, existing.BookingId);
+            return new WebhookResultDto(true, "Duplicate", "Giao dịch đã xử lý trước đó (idempotent theo id).", existing.Id, existing.BookingId);
         }
 
         var amount = dto.TransferAmount ?? 0m;
-        var content = dto.Content ?? dto.Description ?? dto.Code ?? "";
-        var transferType = (dto.TransferType ?? "in").ToLowerInvariant();
+        // content = nội dung CK gốc; code = mã thanh toán SePay trích theo cấu hình tiền tố
+        var contentParts = new[] { dto.Content, dto.Code, dto.Description, dto.SubAccount }
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .Select(s => s!.Trim());
+        var contentForMatch = string.Join(" ", contentParts);
+        var contentDisplay = dto.Content ?? dto.Code ?? dto.Description ?? "";
+        var transferType = (dto.TransferType ?? "in").Trim().ToLowerInvariant();
 
         var payment = new BankPayment
         {
             GatewayTransactionId = txId,
             Gateway = dto.Gateway,
             AccountNumber = dto.AccountNumber,
-            Content = content,
+            Content = contentDisplay.Length > 500 ? contentDisplay[..500] : contentDisplay,
             ReferenceCode = dto.ReferenceCode,
             TransferType = transferType,
             Amount = amount,
             RawPayload = rawJson.Length > 8000 ? rawJson[..8000] : rawJson,
             ReceivedAt = DateTime.UtcNow,
-            TransactionAt = ParseTransactionDate(dto.TransactionDate),
+            TransactionAt = ParseVietnamTransactionDate(dto.TransactionDate),
             Status = "Received"
         };
+
+        if (!settings.IsEnabled)
+        {
+            payment.Status = "Unmatched";
+            payment.MatchNote = "Webhook/CK đang tắt trên hệ thống — đã ghi nhận giao dịch.";
+            db.BankPayments.Add(payment);
+            await db.SaveChangesAsync();
+            return new WebhookResultDto(true, payment.Status, payment.MatchNote, payment.Id);
+        }
 
         if (transferType is "out")
         {
@@ -179,11 +192,15 @@ public class BankPaymentService(AppDbContext db, IHttpContextAccessor httpContex
             return new WebhookResultDto(true, payment.Status, payment.MatchNote, payment.Id);
         }
 
-        var bookingId = TryParseBookingId(content, settings.TransferContentPrefix);
+        var bookingId = TryParseBookingId(contentForMatch, settings.TransferContentPrefix)
+            ?? TryParseBookingId(dto.Code ?? "", settings.TransferContentPrefix)
+            ?? TryParseBookingId(dto.Content ?? "", settings.TransferContentPrefix)
+            ?? TryParseBookingId(dto.Description ?? "", settings.TransferContentPrefix);
+
         if (bookingId is null)
         {
             payment.Status = "Unmatched";
-            payment.MatchNote = "Không tìm thấy mã booking trong nội dung chuyển khoản.";
+            payment.MatchNote = "Không tìm thấy mã booking trong content/code/description.";
             db.BankPayments.Add(payment);
             await db.SaveChangesAsync();
             return new WebhookResultDto(true, payment.Status, payment.MatchNote, payment.Id);
@@ -204,13 +221,12 @@ public class BankPaymentService(AppDbContext db, IHttpContextAccessor httpContex
         if (booking.PaymentStatus is "Paid" or "Manual")
         {
             payment.Status = "Matched";
-            payment.MatchNote = "Booking đã thanh toán trước đó; ghi nhận giao dịch.";
+            payment.MatchNote = "Booking đã thanh toán trước đó; ghi nhận giao dịch SePay.";
             db.BankPayments.Add(payment);
             await db.SaveChangesAsync();
             return new WebhookResultDto(true, payment.Status, payment.MatchNote, payment.Id, booking.Id);
         }
 
-        // Cho phép sai số 0 VND — số nguyên
         var expected = Math.Round(booking.TotalAmount, 0, MidpointRounding.AwayFromZero);
         var received = Math.Round(amount, 0, MidpointRounding.AwayFromZero);
 
@@ -231,13 +247,30 @@ public class BankPaymentService(AppDbContext db, IHttpContextAccessor httpContex
 
         payment.Status = "Matched";
         payment.MatchNote = received > expected
-            ? $"Khớp booking #{booking.Id} (nhận dư {received - expected:0}đ)."
-            : $"Khớp booking #{booking.Id} — đã thanh toán.";
+            ? $"SePay khớp booking #{booking.Id} (nhận dư {received - expected:0}đ)."
+            : $"SePay khớp booking #{booking.Id} — đã thanh toán.";
 
         db.BankPayments.Add(payment);
         await db.SaveChangesAsync();
 
         return new WebhookResultDto(true, payment.Status, payment.MatchNote, payment.Id, booking.Id);
+    }
+
+    /// <summary>transactionDate SePay: YYYY-MM-DD HH:mm:ss (giờ Việt Nam).</summary>
+    private static DateTime? ParseVietnamTransactionDate(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return null;
+        if (!DateTime.TryParse(value, out var local)) return null;
+        try
+        {
+            return RoomBillingService.FromVietnamLocal(DateTime.SpecifyKind(local, DateTimeKind.Unspecified));
+        }
+        catch
+        {
+            if (local.Kind == DateTimeKind.Unspecified)
+                return DateTime.SpecifyKind(local, DateTimeKind.Utc);
+            return local.ToUniversalTime();
+        }
     }
 
     public async Task<BankPaymentDto?> MarkBookingPaidManualAsync(int bookingId)
@@ -344,18 +377,6 @@ public class BankPaymentService(AppDbContext db, IHttpContextAccessor httpContex
         p.ReceivedAt,
         p.TransactionAt
     );
-
-    private static DateTime? ParseTransactionDate(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value)) return null;
-        if (DateTime.TryParse(value, out var dt))
-        {
-            if (dt.Kind == DateTimeKind.Unspecified)
-                return DateTime.SpecifyKind(dt, DateTimeKind.Utc);
-            return dt.ToUniversalTime();
-        }
-        return null;
-    }
 
     private static string GenerateSecret()
     {

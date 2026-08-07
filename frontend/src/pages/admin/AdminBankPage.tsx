@@ -230,9 +230,10 @@ export default function AdminBankPage() {
       <section className="mt-6 space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
         <h2 className="text-base font-semibold text-espresso">URL webhook (dán vào SePay)</h2>
         <p className="text-xs text-slate-500">
-          Dán URL backend API (thường domain Render, <strong>không</strong> dùng domain Vercel).
-          Method: <strong>POST</strong>. Auth: <strong>API Key</strong> = Webhook secret
-          (`Authorization: Apikey …`). Nút “Gửi thử” một số app dùng GET — endpoint đã hỗ trợ GET kiểm tra URL.
+          SePay gửi <strong>POST</strong> payload giao dịch. Endpoint trả{' '}
+          <code className="rounded bg-slate-100 px-1">{`{"success": true}`}</code> (HTTP 200).
+          URL phải là <strong>API backend</strong> (Render/VPS), không dùng domain Vercel.
+          Auth API Key = Webhook secret → <code className="rounded bg-slate-100 px-1">Authorization: Apikey …</code>.
         </p>
 
         <div className="space-y-2">
